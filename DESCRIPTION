@@ -1,4 +1,4 @@
-Package: SLICE
+Package: slice
 Title: Sparse + Low-Rank Inverse Covariance Estimation (SLICE)
 Version: 0.0.1.0
 Authors@R: c(person("Martin", "Ondrus", email = "mondrus@ualberta.ca", role = c("aut", "cre")))
