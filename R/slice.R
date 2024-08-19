@@ -85,7 +85,6 @@
 #' Sigma <- solve(S + L) # Define Sigma
 #'
 #' out <- slice(Sigma, 0.01, r) # Run SLICE
-#' norm(L - out$L)
 #'
 #' out <- slice(Sigma, 0.01, r, Sest = "gscad") # Run SLICE with SCAD
 slice <- function(Sigma, rho, r, Sest = "glasso",
