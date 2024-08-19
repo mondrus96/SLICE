@@ -5,7 +5,7 @@ Authors@R: c(person("Martin", "Ondrus", email = "mondrus@ualberta.ca", role = c(
 Author: Martin Ondrus [aut, cre]
 Maintainer: Martin Ondrus <mondrus@ualberta.ca>
 Description: Implementation of SLICE for sparse and low rank Gaussian graphical model estimation.
-License: MIT + file LICENSE
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
