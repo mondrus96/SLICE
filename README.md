@@ -11,7 +11,7 @@ if (!require("devtools", quietly = TRUE))
 library(devtools)
 
 # Install SLICE
-devtools::install_github("mondrus96/SLICE")
+devtools::install_github("mondrus96/slice")
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ slice(Sigma, rho, r, Sest = "glasso", tol = 0.001, maxiter = 100)
 - **Sigma**: A matrix. The input covariance matrix.
 - **rho**: A numeric. Regularization parameter for sparse estimator.
 - **r**: An integer. Rank for latent component.
-- **Sest**: A character string. Type of sparse estimator to use, default = `"glasso"` [(Friedman et al, 2008)](https://academic.oup.com/biostatistics/article/9/3/432/224260). Other choices include `"gscad"` (Fan et al., 2009), `"clime"` (Cai et al., 2011), and `"huge_glasso"` (Zhao et al., 2012).
+- **Sest**: A character string. Type of sparse estimator to use, default = `"glasso"` [(Friedman et al, 2008)](https://academic.oup.com/biostatistics/article/9/3/432/224260). Other choices include `"gscad"` [(Fan et al., 2009)](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-3/issue-2/Network-exploration-via-the-adaptive-LASSO-andSCAD-penalties/10.1214/08-AOAS215.full), `"clime"` [(Cai et al., 2011)](https://www.tandfonline.com/doi/abs/10.1198/jasa.2011.tm10155), and `"huge_glasso"` [(Zhao et al., 2012)](https://jmlr.org/beta/papers/v13/zhao12a.html).
 - **tol**: A numeric. Tolerance for algorithm, default = 1e-3.
 - **maxiter**: An integer. Maximum number of iterations, default = 100.
 
