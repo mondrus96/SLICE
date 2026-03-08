@@ -1,15 +1,10 @@
 #' SLICE estimator
 #'
-#' This function implements sparse + low-rank inverse covariance estimation (SLICE).
+#' This function implements sparse + low-rank inverse covariance estimation 
+#' (SLICE). For full details, please see the original publication 
+#' (Ondrus et al, 2024).
 #'
 #' @export
-#' @importFrom clime clime
-#' @importFrom glasso glasso
-#' @importFrom huge huge
-#' @importFrom Matrix chol
-#' @importFrom Matrix chol2inv
-#' @importFrom RSpectra eigs
-#' @importFrom RSpectra svds
 #'
 #' @param Sigma A matrix. The input covariance matrix.
 #' @param rho A numeric. Regularization parameter for sparse estimator.
@@ -58,6 +53,12 @@
 #' Friedman, J., Hastie, T., and Tibshirani, R. Sparse inverse
 #' covariance estimation with the graphical lasso.
 #' \emph{Biostatistics}, 9(3):432–441, 2008.
+#' 
+#' Ondrus, M., & Cribben, I. A direct method for the estimation 
+#' of the sparse and latent variable components of a Gaussian 
+#' graphical model. In 2024 10th International Conference on 
+#' Control, Decision and Information Technologies (CoDIT), 
+#' 522-527, 2024.
 #'
 #' Zhao, T., Liu, H., Roeder, K., Lafferty, J., and
 #' Wasserman, L. The huge package for high dimensional
@@ -65,24 +66,10 @@
 #' of Machine Learning Research}, 13(1):1059–1062, 2012.
 #'
 #' @examples
-#' set.seed(123)
-#' p <- 100 # Number of nodes
+#' sim_out <- sim_slice_data(r = 4, p = 50, n = 500, seed = 123)
 #'
-#' S <- outer(1:p, 1:p,
-#'         function(i, j) 1 * exp(-0.5 * abs(i - j))) # Exponential decay
-#' S[S < 0.01] <- 0
-#' perm <- sample(p) # Permute
-#' S <- S[perm, perm]
-#'
-#' r <- 4 # Rank of latent
-#' probs <- runif(r)
-#' probs <- probs / sum(probs)
-#' Z <- matrix(0, p, r)
-#' indices <- sample(1:r, p, replace = TRUE, prob = probs)
-#' Z[cbind(1:p, indices)] <- 1
-#' L <- Z %*% t(Z)
-#'
-#' Sigma <- solve(S + L) # Define Sigma
+#' Sigma <- sim_out$Sigma
+#' r <- 4
 #'
 #' out <- slice(Sigma, 0.01, r) # Run SLICE
 #'
@@ -103,38 +90,38 @@ slice <- function(Sigma, rho, r, Sest = "glasso",
   invSigma <- Matrix::chol2inv(Matrix::chol(Sigma))
 
   L <- 0 # zero initialization L
-  E <- invSigma - L # Expectation
+  D <- invSigma - L # Difference
   S <- 0 # Empty S
 
   deltaS <- deltaL <- deltalogL <- c()
   for(i in 1:maxiter){
-    if(!isPD(E)){
-      E <- makePD(E) # Make expectation PD
+    if(!isPD(D)){
+      D <- makePD(D) # Make difference PD
     }
 
     Sold <- S # Sparse step
     if(Sest == "glasso"){
-      S <- glasso(Matrix::chol2inv(Matrix::chol(E)), rho,
+      S <- glasso::glasso(Matrix::chol2inv(Matrix::chol(D)), rho,
                   thr = tol, maxit = maxiter)$wi
     } else if(Sest == "clime"){
-      S <- clime(Matrix::chol2inv(Matrix::chol(E)), rho,
+      S <- clime::clime(Matrix::chol2inv(Matrix::chol(D)), rho,
                  sigma = TRUE, linsolver = "simplex")$Omegalist[[1]]
       S[abs(S) < tol] <- 0
     } else if(Sest == "gscad"){
-      S <- gscad(Matrix::chol2inv(Matrix::chol(E)), rho)
+      S <- gscad(Matrix::chol2inv(Matrix::chol(D)), rho)
     } else if(Sest == "huge_glasso"){
-      S <- huge(Matrix::chol2inv(Matrix::chol(E)), rho,
+      S <- huge::huge(Matrix::chol2inv(Matrix::chol(D)), rho,
                 method = "glasso", verbose = FALSE)$icov[[1]]
     }
     S <- (S + t(S))/2
 
     Lold <- L # Latent step
-    tsvdL <- svds(invSigma - S, r)
+    tsvdL <- RSpectra::svds(invSigma - S, r)
     L <- tsvdL$v %*% diag(tsvdL$d) %*% t(tsvdL$v)
     L <- (L + t(L))/2
 
-    E <- invSigma - L # New expectation
-    E <- (E + t(E))/2
+    D <- invSigma - L # New difference
+    D <- (D + t(D))/2
 
     deltaS <- c(deltaS, sqrt(sum((S - Sold)^2))) # Convergence check
     deltaL <- c(deltaL, sqrt(sum((L - Lold)^2)))

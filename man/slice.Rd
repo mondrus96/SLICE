@@ -33,7 +33,9 @@ parameter used for the sparse component.}
 related to the convergence of the algorithm.}
 }
 \description{
-This function implements sparse + low-rank inverse covariance estimation (SLICE).
+This function implements sparse + low-rank inverse covariance estimation
+(SLICE). For full details, please see the original publication
+(Ondrus et al, 2024).
 }
 \details{
 Given sample covariance \eqn{\boldsymbol{\tilde{\Sigma}}} the
@@ -51,24 +53,10 @@ where \eqn{\rho} and \eqn{r} are regularization parameters for the sparse
 and latent components, respectively.
 }
 \examples{
-set.seed(123)
-p <- 100 # Number of nodes
+sim_out <- sim_slice_data(r = 4, p = 100, n = 500, seed = 123)
 
-S <- outer(1:p, 1:p,
-        function(i, j) 1 * exp(-0.5 * abs(i - j))) # Exponential decay
-S[S < 0.01] <- 0
-perm <- sample(p) # Permute
-S <- S[perm, perm]
-
-r <- 4 # Rank of latent
-probs <- runif(r)
-probs <- probs / sum(probs)
-Z <- matrix(0, p, r)
-indices <- sample(1:r, p, replace = TRUE, prob = probs)
-Z[cbind(1:p, indices)] <- 1
-L <- Z \%*\% t(Z)
-
-Sigma <- solve(S + L) # Define Sigma
+Sigma <- sim_out$Sigma
+r <- 4
 
 out <- slice(Sigma, 0.01, r) # Run SLICE
 
@@ -86,6 +74,12 @@ applied statistics}, 3(2):521, 2009.
 Friedman, J., Hastie, T., and Tibshirani, R. Sparse inverse
 covariance estimation with the graphical lasso.
 \emph{Biostatistics}, 9(3):432–441, 2008.
+
+Ondrus, M., & Cribben, I. A direct method for the estimation
+of the sparse and latent variable components of a Gaussian
+graphical model. In 2024 10th International Conference on
+Control, Decision and Information Technologies (CoDIT),
+522-527, 2024.
 
 Zhao, T., Liu, H., Roeder, K., Lafferty, J., and
 Wasserman, L. The huge package for high dimensional

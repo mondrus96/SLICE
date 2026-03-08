@@ -1,56 +1,87 @@
-#' Log likelihood function
+#' Matrix completion.
 #'
-#' This function is used to calculate the log likelihood.
-#' @param Sigma A matrix. The masked latent matrix.
-#' @param invSigmahat A matrix. The estimated precision matrix.
-#' @return The log likelihood.
+#' Returns completed matrix from missing entries.
+#' 
+#' @param L A matrix. The matrix to be completed, with missing entries as NA.
+#' @param r A numeric. The rank of the joint low-rank space.
+#' @param labs A list. The node labels corresponding to each layer.
+#' @return A matrix with completed entries.
 #' @keywords internal
-logL = function(Sigma, invSigmahat){
-  if(!isPD(invSigmahat)){
-    invSigmahat <- makePD(invSigmahat) # Make PD if not already
+#' @noRd
+matcomp <- function(L, r, labs) {
+  # One‐pass truncated SVD per block to build factor H
+  p <- nrow(L)
+  H <- matrix(0, p, r)
+  for (idx in labs) {
+    X  <- L[idx, idx]
+    sv <- RSpectra::svds(X, r)
+    H[idx, ] <- sv$u[, 1:r] %*% diag(sqrt(sv$d[1:r]), r, r)
   }
-  return(log(det(invSigmahat)) - sum(diag(Sigma %*% (invSigmahat))))
+  
+  # Reconstruct low‐rank completion
+  return(H %*% t(H))
 }
 
-#' Make a matrix positive definite (PD)
+#' Project a joint matrix to list of matrices.
 #'
-#' This function adds a small value to diagonal to force a matrix to be PD.
-#' @param mat A matrix. The input which is potentially non-PD.
-#' @return The PD version of the matrix.
+#' Returns a list of matrices given an input joint matrix and 
+#' layer-wise labels.
+#' @param mat A matrix. The joint matrix to be projected into 
+#' a layer-wise list of matrices.
+#' @param labs A list. The node labels corresponding to each layer.
+#' @return A list of matrices.
 #' @keywords internal
-makePD = function(mat){
-  p = ncol(mat)
-  eigvals = suppressWarnings(eigs(mat, ncol(mat), opts = list(retvec = FALSE))$values)
-  perturb = max(max(eigvals) - p*min(eigvals), 0)/(p-1)
-  mat = mat+diag(p)*perturb
+#' @noRd
+mat2list <- function(mat, labs) {
+  uniqlabs <- unique(unlist(labs)) # Get unique labels
+  # List to store decomposed matrices
+  matlist <- vector("list", length(labs))
+  
+  # Function to extract relevant matrix part
+  extractMat <- function(lab) {
+    inds <- match(lab, uniqlabs) # Find indices of labels in uniqlabs
+    submat <- mat[inds, inds] # Extract submatrix for given labels
+    submat
+  }
+  
+  # Apply extractMat to each set of labels in labs
+  matlist <- lapply(labs, extractMat)
+  
+  return(matlist)
+}
+
+#' Project a list of matrices to a joint matrix.
+#'
+#' Returns a joint matrix given an input list of matrices and 
+#' layer-wise labels.
+#' 
+#' @param matlist A list. The layer-wise list of matrices to be 
+#' projected into a joint matrix.
+#' @param labs A list. The node labels corresponding to each layer.
+#' @return A matrx.
+#' @keywords internal
+#' @noRd
+list2mat <- function(matlist, labs){
+  uniqlabs <- unique(unlist(labs)) # Get unique labels
+  
+  mat <- countmat <- matrix(0, nrow = length(uniqlabs), ncol = length(uniqlabs)) # Create matrices
+  labmats <- vector("list", length(matlist)) # Create an empty list to collect index matrices
+  
+  # Fill labmats with the corresponding index matrices
+  for(i in seq_along(matlist)){
+    indmat <- matrix(FALSE, nrow = length(uniqlabs), ncol = length(uniqlabs))
+    inds <- match(labs[[i]], uniqlabs)
+    indmat[inds, inds] <- TRUE
+    labmats[[i]] <- indmat
+  }
+  for(i in seq_along(matlist)) {
+    mat[labmats[[i]]] <- mat[labmats[[i]]] + matlist[[i]]
+    countmat[labmats[[i]]] <- countmat[labmats[[i]]] + 1
+  }
+  
+  mat <- mat / countmat # Average overlapping values
+  mat[is.nan(mat)] <- NA # Replace NaN w/ NA
+  colnames(mat) <- rownames(mat) <- uniqlabs
+  
   return(mat)
-}
-
-#' Check if a matrix is PD
-#'
-#' Use Cholesky decomposition to determine if a matrix is PD (faster than full eigendecomp).
-#' @param mat A matrix. The input which is potentially non-PD.
-#' @return TRUE/FALSE whether the matrix is PD.
-#' @keywords internal
-isPD = function(mat){
-  tryCatch({
-    chol(mat)
-    return(TRUE)
-  }, error = function(e){
-    return(FALSE)
-  })
-}
-
-#' Generate a log sequence.
-#'
-#' Returns logarthmically spaced sequence of values.
-#' @param beg A numeric. The beginning of the sequence
-#' @param end A numeric. The end of the sequence
-#' @param len A numeric. The number of values to return.
-#' @return A vector of logarithmically spaced values.
-#' @keywords internal
-logseq <- function(beg, end, len) {
-  log_beg <- log10(beg); log_end <- log10(end)
-  log_seq <- seq(log_beg, log_end, length.out = len)
-  return(10^log_seq)
 }

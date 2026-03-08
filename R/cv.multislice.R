@@ -1,11 +1,12 @@
-#' Cross validation for model selection in SLICE
+#' Cross validation for model selection in multiSLICE
 #'
-#' This function implements cross validation for SLICE. For full 
-#' details, please see the original publication (Ondrus et al, 2024).
+#' This function implements cross validation for multiSLICE. For full 
+#' details, please see the original publication (Ondrus et al, 2025).
 #'
 #' @export
 #'
-#' @param X A matrix. The input data matrix.
+#' @param Xs A list. The set of input data matrices, where each element in the
+#' list is a matrix.
 #' @param folds A numeric. The number of folds to split the data into.
 #' @param rhos A vector of numerics. Regularization parameter for sparse estimator.
 #' @param rs A vector of integers. Ranks for latent component.
@@ -29,7 +30,7 @@
 #' highest likelihood.}
 #' \item{r}{An integer of the rank corresponding to the highest likelihood.}
 #'
-#' @seealso \code{\link{slice}}
+#' @seealso \code{\link{multislice}}
 #'
 #' @references
 #' Cai, T., Liu, W., and Luo, X. A constrained l1 minimization
@@ -44,11 +45,10 @@
 #' covariance estimation with the graphical lasso.
 #' \emph{Biostatistics}, 9(3):432–441, 2008.
 #' 
-#' Ondrus, M., & Cribben, I. A direct method for the estimation 
-#' of the sparse and latent variable components of a Gaussian 
-#' graphical model. In 2024 10th International Conference on 
-#' Control, Decision and Information Technologies (CoDIT), 
-#' 522-527, 2024.
+#' Ondrus, M., Cribben, I., & Feng, Y. A Latent Multilayer 
+#' Graphical Model For Complex, Interdependent Systems. \emph{The 
+#' Thirty-ninth Annual Conference on Neural Information 
+#' Processing Systems}, 2025.
 #'
 #' Zhao, T., Liu, H., Roeder, K., Lafferty, J., and
 #' Wasserman, L. The huge package for high dimensional
@@ -56,21 +56,21 @@
 #' of Machine Learning Research}, 13(1):1059–1062, 2012.
 #'
 #' @examples
-#' sim_out <- sim_slice_data(r = 4, p = 50, n = 500, seed = 123)
+#' sim_out <- sim_multislice_data(r = 2, p = 50, l = 2, n = 500, seed = 123)
 #'
-#' X <- sim_out$X
+#' Xs <- sim_out$Xs
 #'
-#' out <- cv.slice(X, folds = 3)
+#' out <- cv.multislice(Xs, folds = 3)
 #'
 #' # Access selected parameters
 #' out$rho
 #' out$r
-cv.slice = function(X, folds = 3, rhos = logseq(1e-5, 0.1, 5), rs = 2:6,
-                    Sest = "glasso", tol = 1e-3, maxiter = 100, verbose = TRUE){
-  n <- nrow(X) # number of samples
-  cvmat <- matrix(NA, length(rs), length(rhos))
-  rownames(cvmat) <- rs; colnames(cvmat) <- rhos
-
+cv.multislice = function(Xs, folds = 3, rhos = logseq(1e-5, 0.1, 5), rs = 2:6,
+                         Sest = "glasso", tol = 1e-3, maxiter = 100, verbose = TRUE){
+  
+  ns <- lapply(Xs, nrow) # number of samples
+  cvmat <- matrix(NA, length(rs), length(rhos)); rownames(cvmat) <- rs; colnames(cvmat) <- rhos
+  
   # Go over grid of rhos and rs
   for(i in 1:length(rs)){
     if(verbose){
@@ -80,17 +80,27 @@ cv.slice = function(X, folds = 3, rhos = logseq(1e-5, 0.1, 5), rs = 2:6,
       if(verbose){
         print(paste0("rho: ", rhos[j]))
       }
-      ind <- sample(1:folds, n, replace = TRUE) # Define indices
+      
+      inds <- mapply(sample, replicate(length(Xs), 1:folds, simplify = FALSE), ns, 
+                     MoreArgs = list(replace = TRUE), SIMPLIFY = FALSE) # Define indices
       mulogL <- c()
       for(k in 1:folds){
-        train <- X[ind != k,]; test <- X[ind == k,] # Train and test sets
+        train <- mapply(function(x, ind) x[ind != k,], Xs, inds, 
+                        SIMPLIFY = FALSE) # List of data for train and test
+        test <- mapply(function(x, ind) x[ind == k,], Xs, inds, 
+                       SIMPLIFY = FALSE)
+        
+        train <- lapply(train, stats::cov); test <- lapply(test, stats::cov) # Define covariance
+        
+        out <- multislice(train, rhos[j], rs[i], 
+                          Sest, tol = tol, maxiter = maxiter) # Run method
+        Ss <- out$S; L <- out$L
+        
+        labs <- lapply(Xs, colnames) # Labels from each dimension
+        Ls <- mat2list(L, labs)
 
-        out <- slice(stats::cov(train), rhos[j], rs[i],
-                     Sest, tol = tol, maxiter = maxiter) # Run method
-        S <- out$S; L <- out$L
-
-        likl <- logL(stats::cov(test), S + L) # Append to mulogL
-        mulogL <- c(mulogL, likl)
+        likl <- mapply(logL, test, Map("+", Ss, Ls)) # Append to mulogL
+        mulogL <- c(mulogL, sum(likl))
       }
       cvmat[i, j] <- mean(mulogL)
     }
@@ -99,8 +109,9 @@ cv.slice = function(X, folds = 3, rhos = logseq(1e-5, 0.1, 5), rs = 2:6,
   if(nrow(best) > 2){
     best <- best[1,]
   }
-  result <- list(cvmat = cvmat, maxlogL = max(cvmat),
+  
+  result <- list(cvmat = cvmat, maxlogL = max(cvmat), 
               rho = rhos[best[2]], r = rs[best[1]])
-  class(result) <- "cv.slice"
+  class(result) <- "cv.multislice"
   return(result)
 }
