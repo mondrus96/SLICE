@@ -52,7 +52,7 @@
 #'
 #' Zhao, T., Liu, H., Roeder, K., Lafferty, J., and
 #' Wasserman, L. The huge package for high dimensional
-#' undirected graph estimation in r. \emph{The Journal
+#' undirected graph estimation in R. \emph{The Journal
 #' of Machine Learning Research}, 13(1):1059–1062, 2012.
 #'
 #' @examples
