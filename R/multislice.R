@@ -1,8 +1,8 @@
 #' multiSLICE estimator
 #'
 #' This function implements multilayer sparse + low-rank inverse covariance 
-#' estimation (multiSLICE). For full details, please see the original 
-#' publication (Ondrus et al, 2025).
+#' estimation (multiSLICE) for multilayer graphical models. For full details, 
+#' please see the original publication (Ondrus et al, 2025).
 #' 
 #' @export
 #'

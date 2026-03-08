@@ -1,10 +1,10 @@
 Package: slice
-Title: Sparse + Low-Rank Inverse Covariance Estimation (SLICE)
+Title: Sparse and Low-Rank Precision Matrix Estimation for Single-Layer and Multilayer Graphical Models
 Version: 0.0.1.0
 Authors@R: c(person("Martin", "Ondrus", email = "mondrus@ualberta.ca", role = c("aut", "cre")))
 Author: Martin Ondrus [aut, cre]
 Maintainer: Martin Ondrus <mondrus@ualberta.ca>
-Description: The SLICE package implements efficient estimation of joint sparse and low‐rank inverse covariance (precision) matrices for latent-variable Gaussian graphical models. The main routine includes a pseudo-EM algorithm with a simple convex regularizer that simultaneously recovers a sparse precision matrix and low-rank latent structure. Users can flexibly choose among multiple sparse penalties (e.g., LASSO, SCAD) and estimation schemes (e.g, CLIME), and perform model selection via cross-validation, all of which are implemented in the main methods.
+Description: Implements methods for estimating sparse and low-rank precision (inverse covariance) matrices in latent-variable Gaussian graphical models. The package provides two related estimators: 'slice' for single-layer graphical models and 'multislice' for multilayer settings where multiple related covariance structures are jointly modeled. The algorithms combine sparse regularization and low-rank structure to recover conditional dependencies and latent components. Several sparse penalties (including LASSO and SCAD) are supported, and model selection can be performed using cross-validation.
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

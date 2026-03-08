@@ -1,8 +1,8 @@
 #' SLICE estimator
 #'
 #' This function implements sparse + low-rank inverse covariance estimation 
-#' (SLICE). For full details, please see the original publication 
-#' (Ondrus et al, 2024).
+#' (SLICE) for single-layer graphical models. For full details, please see 
+#' the original publication (Ondrus et al, 2024).
 #'
 #' @export
 #'
