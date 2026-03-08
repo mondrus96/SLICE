@@ -54,7 +54,7 @@ This function implements a grid search over all combinations of
 log likelihood.
 }
 \examples{
-sim_out <- sim_slice_data(r = 4, p = 100, n = 500, seed = 123)
+sim_out <- sim_slice_data(r = 4, p = 50, n = 500, seed = 123)
 
 X <- sim_out$X
 

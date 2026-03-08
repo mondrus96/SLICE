@@ -53,7 +53,7 @@ where \eqn{\rho} and \eqn{r} are regularization parameters for the sparse
 and latent components, respectively.
 }
 \examples{
-sim_out <- sim_slice_data(r = 4, p = 100, n = 500, seed = 123)
+sim_out <- sim_slice_data(r = 4, p = 50, n = 500, seed = 123)
 
 Sigma <- sim_out$Sigma
 r <- 4
